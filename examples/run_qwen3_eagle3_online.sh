@@ -19,6 +19,6 @@ torchrun \
     --learning-rate 1e-4 \
     --max-length 512 \
     --chat-template qwen3 \
-    --cache-dir $ROOT_DIR/cache \
+    --cache-dir $ROOT_DIR/cache/qwen3 \
     --embedding-key model.embed_tokens.weight \
     --tp-size $NUM_GPUS
