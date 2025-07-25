@@ -14,10 +14,10 @@ torchrun \
     --draft-model-config $ROOT_DIR/configs/qwen3-8b-eagle3.json \
     --train-data-path $ROOT_DIR/cache/dataset/sharegpt.jsonl \
     --output-dir $ROOT_DIR/outputs/Qwen3-8B-eagle3 \
-    --num-epochs 10 \
-    --batch-size 6 \
+    --num-epochs 1 \
+    --batch-size 4 \
     --learning-rate 1e-4 \
-    --max-length 2048 \
+    --max-length 512 \
     --chat-template qwen3 \
     --cache-dir $ROOT_DIR/cache \
     --embedding-key model.embed_tokens.weight \
