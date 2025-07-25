@@ -17,6 +17,6 @@ torchrun \
     --learning-rate 1e-4 \
     --max-length 2048 \
     --chat-template llama4 \
-    --cache-dir $ROOT_DIR/cache \
+    --cache-dir $ROOT_DIR/cache/llama4 \
     --embedding-key language_model.model.embed_tokens.weight \
     --tp-size $NUM_GPUS

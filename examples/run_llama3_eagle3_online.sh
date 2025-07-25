@@ -17,4 +17,4 @@ torchrun \
     --learning-rate 1e-4 \
     --max-length 2048 \
     --chat-template llama3 \
-    --cache-dir $ROOT_DIR/cache
+    --cache-dir $ROOT_DIR/cache/llama3
