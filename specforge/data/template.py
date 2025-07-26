@@ -119,7 +119,7 @@ TEMPLATE_REGISTRY.register(
     template=ChatTemplate(
         assistant_header="<|im_start|>assistant",
         user_header="<|im_start|>user",
-        system_prompt="You are a helpful assistant.",
+        system_prompt="",
         end_of_turn_token="<|im_end|>\n",
     ),
 )

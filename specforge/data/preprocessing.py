@@ -63,8 +63,8 @@ def preprocess_conversations(
             - input_ids: List of tokenized input IDs.
             - loss_mask: List of loss masks indicating which tokens should contribute to the loss.
             - attention_mask: List of attention masks.
-    """
-    system_prompt = chat_template.system_prompt
+    """ 
+    # system_prompt = chat_template.system_prompt
     user_message_separator = (
         f"{chat_template.end_of_turn_token}{chat_template.user_header}"
     )
@@ -76,10 +76,17 @@ def preprocess_conversations(
     results = {"input_ids": [], "loss_mask": [], "attention_mask": []}
 
     for source in conversations:
-        messages = [{"role": "system", "content": system_prompt}]
         if not source:
             # if the source is None, skip it
             continue
+        
+        if source[0]["role"] != "system":
+            # if the first message is not from system, get it from the template
+            system_prompt = chat_template.system_prompt
+        else:
+            system_prompt = source[0]["content"]
+        messages = [{"role": "system", "content": system_prompt}]
+
 
         if source[0]["role"] != "user":
             # if the first message is not from user, skip it
