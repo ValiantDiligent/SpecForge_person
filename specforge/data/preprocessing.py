@@ -65,6 +65,7 @@ def preprocess_conversations(
             - attention_mask: List of attention masks.
     """ 
     # system_prompt = chat_template.system_prompt
+
     user_message_separator = (
         f"{chat_template.end_of_turn_token}{chat_template.user_header}"
     )
