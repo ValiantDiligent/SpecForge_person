@@ -12,12 +12,12 @@ torchrun \
     $ROOT_DIR/scripts/train_eagle3_online.py \
     --target-model-path Qwen/Qwen3-8B \
     --draft-model-config $ROOT_DIR/configs/qwen3-8b-eagle3.json \
-    --train-data-path $ROOT_DIR/cache/dataset/sharegpt.jsonl \
+    --train-data-path $ROOT_DIR/cache/dataset/723724.jsonl \
     --output-dir $ROOT_DIR/outputs/Qwen3-8B-eagle3 \
-    --num-epochs 1 \
+    --num-epochs 6 \
     --batch-size 4 \
     --learning-rate 1e-4 \
-    --max-length 512 \
+    --max-length 2048 \
     --chat-template qwen3 \
     --cache-dir $ROOT_DIR/cache/qwen3 \
     --embedding-key model.embed_tokens.weight 
