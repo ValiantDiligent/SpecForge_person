@@ -1,9 +1,9 @@
 import requests
 
-url = f"http://localhost:{port}/v1/chat/completions"
+url = f"http://localhost:30000/v1/chat/completions"
 
 data = {
-    "model": "XiaomiMiMo/MiMo-7B-RL",
+    "model": "Qwen/Qwen3-8B",
     "messages": [{"role": "user", "content": "What is the capital of France?"}],
 }
 
