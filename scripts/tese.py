@@ -8,4 +8,4 @@ data = {
 }
 
 response = requests.post(url, json=data)
-print_highlight(response.json())
+print(response.json())
