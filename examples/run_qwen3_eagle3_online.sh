@@ -4,7 +4,7 @@ SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 ROOT_DIR=$(dirname $SCRIPT_DIR)
 
 # support tp4 train eagle3 for Qwen3-8B
-NUM_GPUS=${1:-4}
+NUM_GPUS=${1:-8}
 
 torchrun \
     --standalone \
@@ -14,7 +14,7 @@ torchrun \
     --draft-model-config $ROOT_DIR/configs/qwen3-8b-eagle3.json \
     --train-data-path $ROOT_DIR/cache/dataset/723724.jsonl \
     --output-dir $ROOT_DIR/outputs/Qwen3-8B-eagle3 \
-    --num-epochs 6 \
+    --num-epochs 1 \
     --batch-size 4 \
     --learning-rate 1e-4 \
     --max-length 2048 \
