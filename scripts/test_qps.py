@@ -6,7 +6,7 @@ from queue import Queue
 from concurrent.futures import ThreadPoolExecutor
 
 url = f"http://localhost:30000/v1/chat/completions"
-path = "/root/SpecForge/cache/dataset/test725.jsonl"
+path = "/root/SecForce/SpecForge/cache/dataset/test725.jsonl"
 NUMS = 1007
 QPS = 50  # 设置每秒发送的请求数
 

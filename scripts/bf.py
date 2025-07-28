@@ -8,7 +8,7 @@ from concurrent.futures import ThreadPoolExecutor
 url = f"http://localhost:30000/v1/chat/completions"
 path = "/root/SpecForge/cache/dataset/test725.jsonl"
 NUMS = 1000
-QPS = 10  # 设置每秒发送的请求数
+BF = 10  # 设置每次并发发送的请求
 
 success_count = 0
 failed_count = 0
@@ -34,8 +34,8 @@ def send_request(data_dict):
             failed_count += 1
             print(f"请求异常: {e}")
 
-def qps_scheduler():
-    """QPS调度器，控制发送频率"""
+def BF_scheduler():
+    """BF调度器，控制发送频率"""
     global sent_count
     
     with ThreadPoolExecutor(max_workers=100) as executor:  # 异步发送请求
@@ -43,8 +43,8 @@ def qps_scheduler():
             batch_start_time = time.time()
             requests_sent_this_batch = 0
             
-            # 每秒发送QPS个请求
-            for _ in range(QPS):
+            # 每秒发送BF个请求
+            for _ in range(BF):
                 if request_queue.empty():
                     time.sleep(0.01)
                     continue
@@ -70,11 +70,11 @@ def qps_scheduler():
             current_finished = success_count + failed_count
             
 # 读取数据并放入队列
-print(f"开始处理，目标数量: {NUMS}，QPS: {QPS}")
+print(f"开始处理，目标数量: {NUMS}，BF: {BF}")
 start_time = time.time()
 
-# 启动QPS调度器线程
-scheduler_thread = threading.Thread(target=qps_scheduler)
+# 启动BF调度器线程
+scheduler_thread = threading.Thread(target=BF_scheduler)
 scheduler_thread.start()
 
 num = 0
@@ -116,8 +116,8 @@ while (success_count + failed_count) < sent_count:
 
 response_time = time.time() - start_time
 
-print(f"\n=== QPS 控制统计 ===")
-print(f"目标QPS: {QPS}")
+print(f"\n=== BF 控制统计 ===")
+print(f"目标BF: {BF}")
 print(f"实际QPS: {sent_count/total_time:.2f}")
 print(f"总发送数量: {sent_count}")
 print(f"成功响应数: {success_count}")
