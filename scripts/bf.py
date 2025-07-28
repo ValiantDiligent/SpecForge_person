@@ -7,7 +7,7 @@ from concurrent.futures import ThreadPoolExecutor
 
 url = f"http://localhost:30000/v1/chat/completions"
 path = "/root/SpecForge/cache/dataset/test725.jsonl"
-NUMS = 1007
+NUMS = 1000
 QPS = 10  # 设置每秒发送的请求数
 
 success_count = 0
@@ -50,12 +50,12 @@ def qps_scheduler():
                     break
                 data_dict = request_queue.get()
                 if data_dict is None:  # 结束信号
-                    break
+                    return
                 # 异步发送请求
                 executor.submit(send_request, data_dict)
                 sent_count += 1
             
-            # 控制QPS
+            # 控制处理完成在继续
             while (success_count + failed_count) < sent_count:
                 time.sleep(0.005)
             # current_finished = success_count + failed_count
