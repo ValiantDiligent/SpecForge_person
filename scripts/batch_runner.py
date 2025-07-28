@@ -11,8 +11,8 @@ PORT_CONFIG = {
     30002: "qwen3_eagle_ours"
 }
 
-QPS_LIST = [15, 10, 5]
-NUMS_LIST = [1000, 3000, 5000]
+QPS_LIST = [40, 30, 20, 10, 5, 3, 1]
+NUMS_LIST = [1000, 2000, 4000]
 
 LOG_DIR = "logs"
 os.makedirs(LOG_DIR, exist_ok=True)
