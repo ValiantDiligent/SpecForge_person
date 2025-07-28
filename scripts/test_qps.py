@@ -89,7 +89,7 @@ request_queue.put(None)
 scheduler_thread.join()
 end_time = time.time()
 total_time = end_time - start_time
-
+print(f"实际QPS: {sent_count/total_time:.2f}")
 print("等待所有请求处理完成...")
 while (success_count + failed_count) < sent_count:
     time.sleep(0.1)
