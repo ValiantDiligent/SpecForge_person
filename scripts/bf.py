@@ -37,34 +37,38 @@ def send_request(data_dict):
 def qps_scheduler():
     """QPS调度器，控制发送频率"""
     global sent_count
-    # interval = 1.0 / QPS  # 每个请求之间的间隔时间
     
     with ThreadPoolExecutor(max_workers=100) as executor:  # 异步发送请求
         while True:
-            if request_queue.empty():
-                time.sleep(0.05)
-                continue
-                
-            data_dict = request_queue.get()
-            if data_dict is None:  # 结束信号
-                break
-                
-            # 异步发送QPS个请求
+            batch_start_time = time.time()
+            requests_sent_this_batch = 0
+            
+            # 每秒发送QPS个请求
             for _ in range(QPS):
                 if request_queue.empty():
-                    break
+                    time.sleep(0.01)
+                    continue
+                    
                 data_dict = request_queue.get()
                 if data_dict is None:  # 结束信号
                     return
+                    
                 # 异步发送请求
                 executor.submit(send_request, data_dict)
                 with count_lock:
                     sent_count += 1
+                requests_sent_this_batch += 1
             
-            # 控制处理完成在继续
-            while (success_count + failed_count) < sent_count:
-                time.sleep(0.005)
-            # current_finished = success_count + failed_count
+            # 如果没有发送任何请求，说明队列空了或遇到结束信号
+            if requests_sent_this_batch == 0:
+                time.sleep(0.05)
+                continue
+            
+            # 控制QPS：确保每秒只发送QPS个请求
+            elapsed = time.time() - batch_start_time
+            sleep_time = max(0, 1.0 - elapsed)
+            if sleep_time > 0:
+                time.sleep(sleep_time)
 
 # 读取数据并放入队列
 print(f"开始处理，目标数量: {NUMS}，QPS: {QPS}")

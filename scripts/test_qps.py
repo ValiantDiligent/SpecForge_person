@@ -8,7 +8,7 @@ from concurrent.futures import ThreadPoolExecutor
 url = f"http://localhost:30000/v1/chat/completions"
 path = "/root/SpecForge/cache/dataset/test725.jsonl"
 NUMS = 1007
-QPS = 10  # 设置每秒发送的请求数
+QPS = 50  # 设置每秒发送的请求数
 
 success_count = 0
 failed_count = 0
