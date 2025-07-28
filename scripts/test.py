@@ -7,6 +7,8 @@ path = "/root/SpecForge/cache/dataset/test725.jsonl"
 NUMS = 1000  
 num = 0    
 start_time = time.time()
+success_count = 0  # 成功请求计数
+failed_count = 0   # 失败请求计数
 with open(path, "r") as f:
 
     for line in f:
