@@ -10,13 +10,12 @@ from transformers import AutoTokenizer
 
 def parse_args():
     parser = argparse.ArgumentParser(description='QPS测试工具')
-    parser.add_argument('--port', type=int, default=30000, help='服务端口号 (默认: 30000)')
-    parser.add_argument('--nums', type=int, default=100, help='处理的总数量 (默认: 100)')
-    parser.add_argument('--qps', type=int, default=10, help='每秒发送请求数 (默认: 10)')
+    parser.add_argument('--port', type=int, default=30000)
+    parser.add_argument('--nums', type=int, default=100)
+    parser.add_argument('--qps', type=int, default=10)
     parser.add_argument('--path', type=str,
-                        default="/root/SecForce/SpecForge/cache/dataset/test725.jsonl",
-                        help='数据文件路径')
-    parser.add_argument('--timeout', type=int, default=300, help='请求超时时间(秒) (默认: 300)')
+                        default="/root/SecForce/SpecForge/cache/dataset/test725.jsonl")
+    parser.add_argument('--timeout', type=int, default=300)
     return parser.parse_args()
 
 args = parse_args()
@@ -29,20 +28,23 @@ url = f"http://localhost:{PORT}/v1/chat/completions"
 
 tokenizer = AutoTokenizer.from_pretrained("Qwen/Qwen3-8B")
 
+# 全局状态
 success_count = 0
 failed_count = 0
 sent_count = 0
 total_input_tokens = 0
 total_output_tokens = 0
 total_decoded_chunks = 0
+first_request_time = None
+last_request_time = None
+
+# 线程间共享
 request_queue = Queue()
 tokenizer_futures = []
-
 e2e_times = []
 ttft_times = []
-generation_times = []  # 新增：每个请求的生成时间
-output_token_counts = []  # 新增：每个请求的输出 token 数量
-
+generation_times = []
+output_token_counts = []
 response_lock = threading.Lock()
 
 class TokenBucketRateLimiter:
@@ -83,8 +85,14 @@ def async_token_count(text, is_input, req_id=None):
 
 def send_request(data_dict):
     global success_count, failed_count, total_decoded_chunks
+    global first_request_time, last_request_time
 
     request_start_time = time.time()
+    with response_lock:
+        if first_request_time is None:
+            first_request_time = request_start_time
+        last_request_time = request_start_time
+
     ttft = None
     first_chunk_received = False
     req_id = -1
@@ -114,14 +122,13 @@ def send_request(data_dict):
                                             req_id = len(generation_times)
                                             generation_times.append(None)
                                             output_token_counts.append(0)
-
                                     tokenizer_futures.append(
                                         tokenizer_executor.submit(async_token_count, delta['content'], False, req_id)
                                     )
-                                    total_decoded_chunks += 1
+                                    with response_lock:
+                                        total_decoded_chunks += 1
                         except json.JSONDecodeError:
                             continue
-
             e2e_time = time.time() - request_start_time
             with response_lock:
                 success_count += 1
@@ -154,6 +161,7 @@ def qps_scheduler():
             executor.submit(send_request, data_dict)
             sent_count += 1
 
+# 读取数据并填充请求队列
 print(f"开始处理，目标数量: {NUMS}，QPS: {QPS}")
 start_time = time.time()
 scheduler_thread = threading.Thread(target=qps_scheduler)
@@ -178,20 +186,21 @@ with open(path, "r") as f:
             "temperature": 0,
             "stream": True
         }
-
         request_queue.put(data_dict)
         num += 1
 
 request_queue.put(None)
 scheduler_thread.join()
 
+# 等待所有请求完成
 while (success_count + failed_count) < sent_count:
     time.sleep(0.1)
 
+# 等待 token 统计完成
 wait(tokenizer_futures)
 end_time = time.time()
-total_time = end_time - start_time
 
+# 工具函数
 def safe_percentile(data, percentile):
     if not data:
         return 0
@@ -200,14 +209,17 @@ def safe_percentile(data, percentile):
 def safe_avg(data):
     return statistics.mean(data) if data else 0
 
+# 输出
 print(f"\n=== QPS 控制统计 ===")
+total_duration = (last_request_time - first_request_time) if (first_request_time and last_request_time) else end_time - start_time
+actual_qps = sent_count / total_duration if total_duration > 0 else 0
 print(f"目标QPS: {QPS}")
-print(f"实际QPS: {sent_count/total_time:.2f}")
+print(f"实际QPS: {actual_qps:.2f}")
 print(f"总发送数量: {sent_count}")
 print(f"成功响应数: {success_count}")
 print(f"失败响应数: {failed_count}")
 print(f"响应成功率: {success_count/(success_count+failed_count)*100:.2f}%")
-print(f"总耗时: {total_time:.2f}秒")
+print(f"总耗时: {end_time - start_time:.2f}秒")
 
 print(f"\n=== 性能指标统计 ===")
 if e2e_times:
@@ -226,7 +238,7 @@ if ttft_times:
     print(f"  P95: {safe_percentile(ttft_times, 95):.3f}s")
     print(f"  P99: {safe_percentile(ttft_times, 99):.3f}s")
 
-# ✅ TPOT
+# TPOT
 tpot_list = []
 for gen_time, out_tokens in zip(generation_times, output_token_counts):
     if gen_time is not None and out_tokens > 0:
