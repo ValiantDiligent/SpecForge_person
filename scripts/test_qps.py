@@ -30,6 +30,7 @@ NUMS = args.nums
 QPS = args.qps
 path = args.path
 TIMEOUT = args.timeout
+url = f"http://localhost:{PORT}/v1/chat/completions"
 
 success_count = 0
 failed_count = 0
