@@ -22,8 +22,14 @@ with open(path, "r") as f:
         
         data_dict = {
             "model": "Qwen/Qwen3-8B",
-            "messages": conversations_list 
+            "messages": conversations_list,
+            "temperature": 0
         }
         response = requests.post(url, json=data_dict)
         # data_s = json.dumps(data_dict,ensure_ascii=False)
 # print(response.json())
+
+
+
+
+
