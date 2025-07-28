@@ -8,7 +8,6 @@ from concurrent.futures import ThreadPoolExecutor, wait
 import statistics
 from transformers import AutoTokenizer
 
-# ========== 参数解析 ==========
 def parse_args():
     parser = argparse.ArgumentParser(description='QPS测试工具')
     parser.add_argument('--port', type=int, default=30000, help='服务端口号 (默认: 30000)')
@@ -20,8 +19,6 @@ def parse_args():
     parser.add_argument('--timeout', type=int, default=300, help='请求超时时间(秒) (默认: 300)')
     return parser.parse_args()
 
-
-# ========== 初始化参数 ==========
 args = parse_args()
 PORT = args.port
 NUMS = args.nums
@@ -32,7 +29,6 @@ url = f"http://localhost:{PORT}/v1/chat/completions"
 
 tokenizer = AutoTokenizer.from_pretrained("Qwen/Qwen3-8B")
 
-# 统计变量
 success_count = 0
 failed_count = 0
 sent_count = 0
@@ -42,13 +38,13 @@ total_decoded_chunks = 0
 request_queue = Queue()
 tokenizer_futures = []
 
-# 性能统计
 e2e_times = []
 ttft_times = []
-tpot_times = []
+generation_times = []  # 新增：每个请求的生成时间
+output_token_counts = []  # 新增：每个请求的输出 token 数量
+
 response_lock = threading.Lock()
 
-# ========== 限速器 ==========
 class TokenBucketRateLimiter:
     def __init__(self, rate_per_second):
         self.capacity = rate_per_second
@@ -69,11 +65,9 @@ class TokenBucketRateLimiter:
             return False
 
 rate_limiter = TokenBucketRateLimiter(QPS)
-
-# Tokenizer异步线程池
 tokenizer_executor = ThreadPoolExecutor(max_workers=4)
 
-def async_token_count(text, is_input):
+def async_token_count(text, is_input, req_id=None):
     global total_input_tokens, total_output_tokens
     try:
         token_len = len(tokenizer.encode(text))
@@ -82,19 +76,20 @@ def async_token_count(text, is_input):
                 total_input_tokens += token_len
             else:
                 total_output_tokens += token_len
+                if req_id is not None and req_id < len(output_token_counts):
+                    output_token_counts[req_id] += token_len
     except Exception as e:
         print(f"Tokenizer 异常: {e}")
 
-# ========== 请求函数 ==========
 def send_request(data_dict):
     global success_count, failed_count, total_decoded_chunks
+
     request_start_time = time.time()
     ttft = None
-    token_count = 0
     first_chunk_received = False
+    req_id = -1
 
     try:
-        # 异步统计输入 token
         input_text = json.dumps(data_dict["messages"])
         tokenizer_futures.append(tokenizer_executor.submit(async_token_count, input_text, True))
 
@@ -115,27 +110,26 @@ def send_request(data_dict):
                                     if not first_chunk_received:
                                         ttft = time.time() - request_start_time
                                         first_chunk_received = True
+                                        with response_lock:
+                                            req_id = len(generation_times)
+                                            generation_times.append(None)
+                                            output_token_counts.append(0)
 
                                     tokenizer_futures.append(
-                                        tokenizer_executor.submit(async_token_count, delta['content'], False)
+                                        tokenizer_executor.submit(async_token_count, delta['content'], False, req_id)
                                     )
                                     total_decoded_chunks += 1
                         except json.JSONDecodeError:
                             continue
 
             e2e_time = time.time() - request_start_time
-            tpot = None
-            if token_count > 0 and ttft is not None:
-                generation_time = e2e_time - ttft
-                tpot = generation_time / token_count if generation_time > 0 else 0
-
             with response_lock:
                 success_count += 1
                 e2e_times.append(e2e_time)
                 if ttft is not None:
                     ttft_times.append(ttft)
-                if tpot is not None:
-                    tpot_times.append(tpot)
+                if req_id >= 0:
+                    generation_times[req_id] = e2e_time - ttft if ttft else None
         else:
             with response_lock:
                 failed_count += 1
@@ -145,7 +139,6 @@ def send_request(data_dict):
             failed_count += 1
         print(f"请求异常: {e}")
 
-# ========== QPS调度器 ==========
 def qps_scheduler():
     global sent_count
     with ThreadPoolExecutor(max_workers=50) as executor:
@@ -161,7 +154,6 @@ def qps_scheduler():
             executor.submit(send_request, data_dict)
             sent_count += 1
 
-# ========== 主执行逻辑 ==========
 print(f"开始处理，目标数量: {NUMS}，QPS: {QPS}")
 start_time = time.time()
 scheduler_thread = threading.Thread(target=qps_scheduler)
@@ -193,17 +185,13 @@ with open(path, "r") as f:
 request_queue.put(None)
 scheduler_thread.join()
 
-# 等待所有请求完成
 while (success_count + failed_count) < sent_count:
     time.sleep(0.1)
 
-# 等待所有 token 统计任务完成
 wait(tokenizer_futures)
-
 end_time = time.time()
 total_time = end_time - start_time
 
-# ========== 统计输出 ==========
 def safe_percentile(data, percentile):
     if not data:
         return 0
@@ -238,13 +226,21 @@ if ttft_times:
     print(f"  P95: {safe_percentile(ttft_times, 95):.3f}s")
     print(f"  P99: {safe_percentile(ttft_times, 99):.3f}s")
 
-if tpot_times:
-    print(f"TPOT (每令牌输出时间):")
-    print(f"  平均值: {safe_avg(tpot_times):.3f}s")
-    print(f"  P50: {safe_percentile(tpot_times, 50):.3f}s")
-    print(f"  P90: {safe_percentile(tpot_times, 90):.3f}s")
-    print(f"  P95: {safe_percentile(tpot_times, 95):.3f}s")
-    print(f"  P99: {safe_percentile(tpot_times, 99):.3f}s")
+# ✅ TPOT
+tpot_list = []
+for gen_time, out_tokens in zip(generation_times, output_token_counts):
+    if gen_time is not None and out_tokens > 0:
+        tpot_list.append(gen_time / out_tokens)
+
+if tpot_list:
+    print(f"\nTPOT (每令牌输出时间):")
+    print(f"  平均值: {safe_avg(tpot_list):.3f}s")
+    print(f"  P50: {safe_percentile(tpot_list, 50):.3f}s")
+    print(f"  P90: {safe_percentile(tpot_list, 90):.3f}s")
+    print(f"  P95: {safe_percentile(tpot_list, 95):.3f}s")
+    print(f"  P99: {safe_percentile(tpot_list, 99):.3f}s")
+else:
+    print("\nTPOT 无法计算（无有效输出）")
 
 print(f"\n=== Token 统计 ===")
 print(f"总输入 token 数: {total_input_tokens}")
