@@ -15,19 +15,24 @@ failed_count = 0
 sent_count = 0
 request_queue = Queue()
 
+# 添加锁保护全局变量
+count_lock = threading.Lock()
+
 def send_request(data_dict):
     """发送请求的函数"""
     global success_count, failed_count
     try:
         response = requests.post(url, json=data_dict, timeout=300)
-        if response.status_code == 200:
-            success_count += 1
-        else:
-            failed_count += 1
-            print(f"请求失败，状态码: {response.status_code}")
+        with count_lock:
+            if response.status_code == 200:
+                success_count += 1
+            else:
+                failed_count += 1
+                print(f"请求失败，状态码: {response.status_code}")
     except Exception as e:
-        failed_count += 1
-        print(f"请求异常: {e}")
+        with count_lock:
+            failed_count += 1
+            print(f"请求异常: {e}")
 
 def qps_scheduler():
     """QPS调度器，控制发送频率"""
@@ -53,7 +58,8 @@ def qps_scheduler():
                     return
                 # 异步发送请求
                 executor.submit(send_request, data_dict)
-                sent_count += 1
+                with count_lock:
+                    sent_count += 1
             
             # 控制处理完成在继续
             while (success_count + failed_count) < sent_count:
