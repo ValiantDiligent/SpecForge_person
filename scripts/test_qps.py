@@ -2,13 +2,34 @@ import requests
 import json
 import time
 import threading
+import argparse
 from queue import Queue
 from concurrent.futures import ThreadPoolExecutor
 
-url = f"http://localhost:30000/v1/chat/completions"
-path = "/root/SecForce/SpecForge/cache/dataset/test725.jsonl"
-NUMS = 1000
-QPS = 5  # 设置每秒发送的请求数
+
+def parse_args():
+    """解析命令行参数"""
+    parser = argparse.ArgumentParser(description='QPS测试工具')
+    parser.add_argument('--port', type=int, default=30000, 
+                       help='服务端口号 (默认: 30000)')
+    parser.add_argument('--nums', type=int, default=100, 
+                       help='处理的总数量 (默认: 100)')
+    parser.add_argument('--qps', type=int, default=10, 
+                       help='每秒发送请求数 (默认: 3)')
+    parser.add_argument('--path', type=str, 
+                       default="/root/SecForce/SpecForge/cache/dataset/test725.jsonl",
+                       help='数据文件路径')
+    parser.add_argument('--timeout', type=int, default=300,
+                       help='请求超时时间(秒) (默认: 300)')
+    return parser.parse_args()
+
+
+args = parse_args()
+PORT = args.port
+NUMS = args.nums
+QPS = args.qps
+path = args.path
+TIMEOUT = args.timeout
 
 success_count = 0
 failed_count = 0
