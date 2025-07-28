@@ -2,7 +2,7 @@ import requests
 import json
 url = f"http://localhost:30000/v1/chat/completions"
 
-path = "~/SpecForge/cache/dataset/test725.jsonl"
+path = "/root/SpecForge/cache/dataset/test725.jsonl"
 NUMS = 1000  
 num = 0    
 with open(path, "r") as f:
