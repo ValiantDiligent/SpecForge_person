@@ -64,12 +64,11 @@ def qps_scheduler():
                 time.sleep(0.05)
                 continue
             
-            # 控制QPS：确保每秒只发送QPS个请求
-            elapsed = time.time() - batch_start_time
-            sleep_time = max(0, 1.0 - elapsed)
-            if sleep_time > 0:
-                time.sleep(sleep_time)
-
+            # 控制并发
+            while (success_count + failed_count) < sent_count:
+                time.sleep(0.1)
+            current_finished = success_count + failed_count
+            
 # 读取数据并放入队列
 print(f"开始处理，目标数量: {NUMS}，QPS: {QPS}")
 start_time = time.time()
