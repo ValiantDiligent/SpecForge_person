@@ -1,75 +1,72 @@
 import os
 import subprocess
-import itertools
 import time
 from datetime import datetime
+import threading
 
-# 测试参数配置
-ports = {
+# === 配置项 ===
+PORT_CONFIG = {
     30000: "qwen3",
-    30001: "qwen3-eagle3-open",
-    30002: "qwen3-eagle3-ours"
+    30001: "qwen3_eagle_open",
+    30002: "qwen3_eagle_ours"
 }
-qps_list = [15, 10, 5]
-nums_list = [1000, 3000, 5000]
 
-# 日志目录
+QPS_LIST = [15, 10, 5]
+NUMS_LIST = [1000, 3000, 5000]
+
 LOG_DIR = "logs"
 os.makedirs(LOG_DIR, exist_ok=True)
 
-# 命令模板
-CMD_TEMPLATE = "python3 performance.py --nums {nums} --qps {qps} --port {port}"
-
-# 任务生成（每个port一个队列）
-tasks_by_port = {port: [] for port in ports}
-for port in ports:
-    for qps, nums in itertools.product(qps_list, nums_list):
-        tasks_by_port[port].append((qps, nums))
-
-# 执行任务（串行 per port）
-def run_task(port, qps, nums):
-    tag = ports[port]
+# === 执行单个任务，并记录日志 ===
+def run_task(port, name, qps, nums):
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    log_file = os.path.join(LOG_DIR, f"{tag}_port{port}_qps{qps}_nums{nums}_{timestamp}.log")
+    log_filename = f"{name}_port{port}_qps{qps}_nums{nums}_{timestamp}.log"
+    log_path = os.path.join(LOG_DIR, log_filename)
 
-    cmd = CMD_TEMPLATE.format(nums=nums, qps=qps, port=port)
-    print(f"开始任务: {cmd}")
-    print(f"日志: {log_file}")
+    cmd = f"python3 performance.py --nums {nums} --qps {qps} --port {port}"
+    print(f"\n__ Running for PORT {port} ({name}) : QPS={qps}, NUMS={nums} __")
+    print(f"Command: {cmd}")
+    print(f"Log file: {log_path}")
 
-    with open(log_file, "w") as f:
-        f.write(f"=== CMD: {cmd} ===\n")
-        f.write(f"=== START: {datetime.now()} ===\n\n")
-        f.flush()
+    with open(log_path, "w") as logfile:
+        logfile.write(f"=== Running: {cmd} ===\n")
+        logfile.flush()
 
-        # subprocess 实时输出
+        # subprocess with live output to log
         process = subprocess.Popen(
             cmd.split(),
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
-            bufsize=1,
             universal_newlines=True
         )
 
         for line in process.stdout:
-            print(f"[PORT {port}] {line.strip()}")
-            f.write(line)
-            f.flush()
-
+            logfile.write(line)
+            logfile.flush()  # 💡 保证中途 crash 也有日志
         process.wait()
-        f.write(f"\n=== END: {datetime.now()} ===\n")
-        f.flush()
 
-        if process.returncode != 0:
-            print(f"⚠️ 错误: 命令执行失败，退出码: {process.returncode}")
-        else:
-            print(f"✅ 完成: {cmd}")
+        logfile.write(f"\n=== Task finished: {cmd} ===\n")
+        logfile.flush()
 
-# 主调度逻辑
+# === 每个 port 独立线程串行调度 ===
+def run_all_for_port(port, name):
+    for qps in QPS_LIST:
+        for nums in NUMS_LIST:
+            run_task(port, name, qps, nums)
+
+# === 主程序 ===
+def main():
+    threads = []
+    for port, name in PORT_CONFIG.items():
+        t = threading.Thread(target=run_all_for_port, args=(port, name))
+        t.start()
+        threads.append(t)
+
+    # 等待所有线程完成
+    for t in threads:
+        t.join()
+
+    print("\n✅ 所有任务执行完成")
+
 if __name__ == "__main__":
-    for port, task_list in tasks_by_port.items():
-        print(f"\n🌀 开始串行任务队列 for PORT {port} ({ports[port]}), 共 {len(task_list)} 项\n")
-        for qps, nums in task_list:
-            run_task(port, qps, nums)
-            print(f"✅ 完成一个任务 [{port}] qps={qps} nums={nums}")
-            print("-" * 60)
-            time.sleep(3)  # 稳定性间隔，可去掉
+    main()
