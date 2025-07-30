@@ -6,24 +6,25 @@ import threading
 
 # === 配置项 ===
 PORT_CONFIG = {
-    30000: "qwen3",
-    30001: "qwen3 vllm",
-    30002: "qwen3_eagle_ours"
+    21001: "vllm qwen3",
+    61001: "sglang qwen3",
+    31001: "qwen3_eagle_ours"
 }
 
-QPS_LIST = [40, 30, 20, 10, 5, 3, 1]
+QPS_LIST = [200,100,50,40, 30, 20, 10, 6,5,4,3,1]
 NUMS_LIST = [2000]
 
-LOG_DIR = "logs_4090"
+LOG_DIR = "logs_x40"
 os.makedirs(LOG_DIR, exist_ok=True)
 
 # === 执行单个任务，并记录日志 ===
 def run_task(port, name, qps, nums):
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    port = "10.83.2.32"
     log_filename = f"{name}_port{port}_qps{qps}_nums{nums}_{timestamp}.log"
     log_path = os.path.join(LOG_DIR, log_filename)
 
-    cmd = f"python3 performance.py --nums {nums} --qps {qps} --port {port} --host localhost"
+    cmd = f"python3 performance.py --nums {nums} --qps {qps} --port {port} --host 10.83.2.32"
     print(f"\n__ Running for PORT {port} ({name}) : QPS={qps}, NUMS={nums} __")
     print(f"Command: {cmd}")
     print(f"Log file: {log_path}")

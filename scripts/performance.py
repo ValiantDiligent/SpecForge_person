@@ -16,6 +16,7 @@ def parse_args():
     parser.add_argument('--path', type=str,
                         default="/root/SecForce/SpecForge/cache/dataset/test725.jsonl")
     parser.add_argument('--timeout', type=int, default=300)
+    parser.add_argument('--host', type=str, default='localhost')
     return parser.parse_args()
 
 args = parse_args()
@@ -24,7 +25,8 @@ NUMS = args.nums
 QPS = args.qps
 path = args.path
 TIMEOUT = args.timeout
-url = f"http://localhost:{PORT}/v1/chat/completions"
+HOST = args.host
+url = f"http://{HOST}:{PORT}/v1/chat/completions"
 
 tokenizer = AutoTokenizer.from_pretrained("Qwen/Qwen3-8B")
 
@@ -257,5 +259,7 @@ else:
 print(f"\n=== Token 统计 ===")
 print(f"总输入 token 数: {total_input_tokens}")
 print(f"总输出 token 数: {total_output_tokens}")
+print(f"输入吞吐量: {total_input_tokens / total_duration:.2f} tokens/s")
+print(f"输出吞吐量: {total_output_tokens / total_duration:.2f} tokens/s")
 print(f"总 Token 数（输入 + 输出）: {total_input_tokens + total_output_tokens}")
 print(f"总 decode 块数量（delta.content 数）: {total_decoded_chunks}")
