@@ -12,7 +12,7 @@ PORT_CONFIG = {
 }
 
 QPS_LIST = [200,100,50,40, 30, 20, 10, 6,5,4,3,1]
-NUMS_LIST = [2000]
+NUMS_LIST = [2000,5000]
 
 LOG_DIR = "logs_x40"
 os.makedirs(LOG_DIR, exist_ok=True)

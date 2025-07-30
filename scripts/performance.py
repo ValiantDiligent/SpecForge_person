@@ -183,7 +183,12 @@ with open(path, "r") as f:
             conversations_list.pop()
 
         data_dict = {
+            # if PORT == 21001 ,"model": "/qwen3-8b",
+            # if PORT == 21001 else "model": "Qwen/Qwen3-8B",
+            
+            "model": "/qwen3-8b" if PORT == 21001 else "Qwen/Qwen3-8B",
             "model": "Qwen/Qwen3-8B",
+            
             "messages": conversations_list,
             "temperature": 0,
             "stream": True

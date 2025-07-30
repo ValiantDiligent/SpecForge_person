@@ -6,8 +6,8 @@ import threading
 
 # === 配置项 ===
 PORT_CONFIG = {
-    20000: "qwen3",
-    20001: "qwen3 vllm",
+    20000: "qwen3——sgalng",
+    21001: "qwen3——vllm",
     20002: "qwen3_eagle_ours"
 }
 
