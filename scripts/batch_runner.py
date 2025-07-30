@@ -6,9 +6,9 @@ import threading
 
 # === 配置项 ===
 PORT_CONFIG = {
-    30000: "qwen3",
-    30001: "qwen3 vllm",
-    30002: "qwen3_eagle_ours"
+    20000: "qwen3",
+    20001: "qwen3 vllm",
+    20002: "qwen3_eagle_ours"
 }
 
 QPS_LIST = [40, 30, 20, 10, 5, 3, 1]
