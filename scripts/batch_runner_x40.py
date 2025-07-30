@@ -20,7 +20,6 @@ os.makedirs(LOG_DIR, exist_ok=True)
 # === 执行单个任务，并记录日志 ===
 def run_task(port, name, qps, nums):
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    port = "10.83.2.32"
     log_filename = f"{name}_port{port}_qps{qps}_nums{nums}_{timestamp}.log"
     log_path = os.path.join(LOG_DIR, log_filename)
 
