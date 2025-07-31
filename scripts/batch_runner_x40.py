@@ -6,13 +6,13 @@ import threading
 
 # === 配置项 ===
 PORT_CONFIG = {
-    21001: "vllm qwen3",
-    61001: "sglang qwen3",
+    # 21001: "vllm qwen3",
+    # 61001: "sglang qwen3",
     31001: "qwen3_eagle_ours"
 }
 
 QPS_LIST = [200,100,50,40, 30, 20, 10, 6,5,4,3,1]
-NUMS_LIST = [2000,5000]
+NUMS_LIST = [2000]
 
 LOG_DIR = "logs_x40"
 os.makedirs(LOG_DIR, exist_ok=True)
