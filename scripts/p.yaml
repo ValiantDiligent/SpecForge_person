@@ -1,0 +1,76 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: qwen3-8b-pd-test
+  name: qwen3-8b-pd-test
+  namespace: default
+spec:
+  progressDeadlineSeconds: 2147483647
+  replicas: 1
+  revisionHistoryLimit: 2147483647
+  selector:
+    matchLabels:
+      app: qwen3-8b-pd-test
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
+    type: RollingUpdate
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: qwen3-8b-pd-test
+        modelServiceName: qwen3-8b-pd-test
+        InstanceLabel: PrefillInstance
+
+    spec:
+      containers:
+      - args:
+        - "9999999999"
+        command:
+        - sleep
+        env:
+        - name: MY_POD_NAME
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.name
+        - name: MY_POD_UID
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.uid
+        image: registry.corp.kuaishou.com/llm/sglang:v0.4.9.post2-cu126
+        imagePullPolicy: Always
+        name: main-container
+        resources:
+          limits:
+            cpu: "32"
+            memory: 64Gi
+            nvidia.com/gpu: "1"
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        # volumeMounts:
+        # - mountPath: /models
+        #   name: models
+        #   readOnly: true
+      dnsPolicy: ClusterFirst
+      hostIPC: true
+      hostNetwork: true
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext: {}
+      terminationGracePeriodSeconds: 30
+      volumes:
+      - emptyDir: {}
+        name: shared-model
+      - hostPath:
+          path: /opt/data/kess
+          type: ""
+        name: kess-data-opt
+      - hostPath:
+          path: /data/logs/llm
+          type: ""
+        name: kcs-log
