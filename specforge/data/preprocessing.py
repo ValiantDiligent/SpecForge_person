@@ -96,7 +96,14 @@ def preprocess_conversations(
         convroles = ["user", "assistant"]
         for j, sentence in enumerate(source):
             role = sentence["role"]
-            assert role == convroles[j % 2], f"unexpected role {role}"
+            expected_role = convroles[j % 2]
+            assert role == expected_role, (
+                f"Role validation failed at position {j}: "
+                f"expected '{expected_role}' but got '{role}'. "
+                f"Conversation should alternate between 'user' and 'assistant'. "
+                f"Current conversation roles so far: {[msg['role'] for msg in source[:j+1]]}. "
+                f"Full message content: {sentence}"
+            )
             messages.append({"role": role, "content": sentence["content"]})
 
         conversation = tokenizer.apply_chat_template(
