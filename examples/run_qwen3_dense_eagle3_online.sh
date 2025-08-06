@@ -4,7 +4,7 @@ SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 ROOT_DIR=$(dirname $SCRIPT_DIR)
 
 # support tp8 train eagle3 for Qwen3-4B/8B/32B
-NUM_GPUS=${1:-1}
+NUM_GPUS=${1:-6}
 
 torchrun \
     --standalone \
@@ -12,14 +12,15 @@ torchrun \
     $ROOT_DIR/scripts/train_eagle3_online.py \
     --target-model-path Qwen/Qwen3-32B \
     --draft-model-config $ROOT_DIR/configs/qwen3-32b-eagle3.json \
-    --train-data-path $ROOT_DIR/cache/dataset/sharegpt.jsonl \
+    # --train-data-path $ROOT_DIR/cache/dataset/sharegpt.jsonl \
+    --train-data-path /media/qwen3_32b \
     --output-dir $ROOT_DIR/outputs/Qwen3-32B-eagle3 \
-    --num-epochs 10 \
+    --num-epochs 6 \
     --batch-size 1 \
     --learning-rate 1e-4 \
     --max-length 2048 \
     --chat-template qwen3 \
-    --cache-dir $ROOT_DIR/cache \
+    --cache-dir $ROOT_DIR/cache_qwen3_32B \
     --embedding-key model.embed_tokens.weight \
     --tp-size $NUM_GPUS \
     --ttt-length 7
