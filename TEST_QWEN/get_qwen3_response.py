@@ -7,7 +7,7 @@ from transformers import AutoModelForCausalLM, AutoTokenizer, pipeline
 
 # 定义模型 ID
 # 注意：我们使用的是 Qwen2-7B-Instruct，因为 Qwen3-8B 并非官方发布的模型名称
-model_name = "Qwen/Qwen3-8B"
+model_name = "Qwen/Qwen3-0.6B"
 
 print(f"正在加载模型: {model_name}")
 

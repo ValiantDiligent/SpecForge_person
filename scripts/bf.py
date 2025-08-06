@@ -1,127 +1,89 @@
-import requests
-import json
-import time
-import threading
-from queue import Queue
-from concurrent.futures import ThreadPoolExecutor
+#!/usr/bin/env python3
+"""
+测试字符串在 Qwen3 中的 tokenization
+"""
 
-url = f"http://localhost:30000/v1/chat/completions"
-path = "/root/SpecForge/cache/dataset/test725.jsonl"
-NUMS = 1000
-BF = 10  # 设置每次并发发送的请求
+from transformers import AutoTokenizer
 
-success_count = 0
-failed_count = 0
-sent_count = 0
-request_queue = Queue()
-
-# 添加锁保护全局变量
-count_lock = threading.Lock()
-
-def send_request(data_dict):
-    """发送请求的函数"""
-    global success_count, failed_count
-    try:
-        response = requests.post(url, json=data_dict, timeout=300)
-        with count_lock:
-            if response.status_code == 200:
-                success_count += 1
-            else:
-                failed_count += 1
-                print(f"请求失败，状态码: {response.status_code}")
-    except Exception as e:
-        with count_lock:
-            failed_count += 1
-            print(f"请求异常: {e}")
-
-def BF_scheduler():
-    """BF调度器，控制发送频率"""
-    global sent_count
+def test_tokenization():
+    # 使用 Qwen3 tokenizer
+    model_name = "Qwen/Qwen3-0.6B"  # 或者你本地的 Qwen3 模型路径
+    print(f"加载 tokenizer: {model_name}")
     
-    with ThreadPoolExecutor(max_workers=100) as executor:  # 异步发送请求
-        while True:
-            batch_start_time = time.time()
-            requests_sent_this_batch = 0
-            
-            # 每秒发送BF个请求
-            for _ in range(BF):
-                if request_queue.empty():
-                    time.sleep(0.01)
-                    continue
-                    
-                data_dict = request_queue.get()
-                if data_dict is None:  # 结束信号
-                    return
-                    
-                # 异步发送请求
-                executor.submit(send_request, data_dict)
-                with count_lock:
-                    sent_count += 1
-                requests_sent_this_batch += 1
-            
-            # 如果没有发送任何请求，说明队列空了或遇到结束信号
-            if requests_sent_this_batch == 0:
-                time.sleep(0.05)
-                continue
-            
-            # 控制并发
-            while (success_count + failed_count) < sent_count:
-                time.sleep(0.1)
-            current_finished = success_count + failed_count
-            
-# 读取数据并放入队列
-print(f"开始处理，目标数量: {NUMS}，BF: {BF}")
-start_time = time.time()
+    try:
+        tokenizer = AutoTokenizer.from_pretrained(model_name)
+    except Exception as e:
+        print(f"加载失败，尝试备用模型: {e}")
+        # 备用模型
+        model_name = "Qwen/Qwen3-0.6B"
+        tokenizer = AutoTokenizer.from_pretrained(model_name)
+    
+    # 要测试的字符串
+    test_string = '<think>\n\n</think>\n\n否<|im_end|>'
+    
+    print("=" * 60)
+    print(f"测试字符串: {repr(test_string)}")
+    print(f"字符串长度: {len(test_string)} 个字符")
+    print("=" * 60)
+    
+    # 进行 tokenization（不添加特殊 token）
+    input_ids = tokenizer.encode(test_string, add_special_tokens=False)
+    tokens = tokenizer.convert_ids_to_tokens(input_ids)
+    
+    print(f"\n📊 Token 统计:")
+    print(f"Token 数量: {len(input_ids)} 个")
+    print(f"Token 详情:")
+    
+    for i, (token, token_id) in enumerate(zip(tokens, input_ids)):
+        # 显示可读的 token 表示
+        display_token = token.replace('\n', '\\n').replace(' ', '▁')
+        print(f"  {i+1:2d}. '{display_token}' (ID: {token_id})")
+    
+    # 验证解码
+    decoded = tokenizer.decode(input_ids)
+    print(f"\n🔍 解码验证:")
+    print(f"解码结果: {repr(decoded)}")
+    print(f"解码匹配: {'✅' if decoded == test_string else '❌'}")
+    
+    # 分析各个组成部分
+    print(f"\n🔧 组件分析:")
+    components = [
+        '<think>',  # 开始标签
+        '\n\n',     # 双换行
+        '</think>', # 结束标签
+        '\n\n',       # 单换行
+        '否',       # 中文字符
+        '<|im_end|>',        # 结束
+        '<|im_end|>\n' 
+    ]
+    
+    total_component_tokens = 0
+    for comp in components:
+        comp_ids = tokenizer.encode(comp, add_special_tokens=False)
+        comp_tokens = tokenizer.convert_ids_to_tokens(comp_ids)
+        display_comp = comp.replace('\n', '\\n')
+        display_tokens = [t.replace('\n', '\\n').replace(' ', '▁') for t in comp_tokens]
+        print(f"  '{display_comp}' -> {len(comp_ids)} tokens: {display_tokens}")
+        total_component_tokens += len(comp_ids)
+    
+    print(f"\n组件总 token 数: {total_component_tokens}")
+    print(f"整体 token 数: {len(input_ids)}")
+    print(f"差异: {len(input_ids) - total_component_tokens} (可能由于上下文效应)")
+    
+    # 测试不同的变体
+    print(f"\n🧪 变体测试:")
+    variants = [
+        '<think>\n\n</think>\n\n否',  # 无引号版本
+        '<think></think>否',        # 无换行版本
+        '<think>\n\n</think>\n\n否<|im_end|>',  # 包含结束标记
+        '<think>\n\n</think>\n\n    ',                      # 只有中文字符
+        '<think>\n\n</think>\n\n',     # 只有标签部分
+    ]
+    
+    for variant in variants:
+        var_ids = tokenizer.encode(variant, add_special_tokens=False)
+        display_variant = variant.replace('\n', '\\n')
+        print(f"  '{display_variant}' -> {len(var_ids)} tokens")
 
-# 启动BF调度器线程
-scheduler_thread = threading.Thread(target=BF_scheduler)
-scheduler_thread.start()
-
-num = 0
-with open(path, "r") as f:
-    for line in f:
-        line = line.strip()
-        if not line:
-            continue
-        if num >= NUMS:
-            print(f"已达到最大处理数量 {NUMS}，停止处理")
-            break
-        
-        num += 1
-        json_data = json.loads(line)
-        conversations_list = json_data['conversations']
-        if len(conversations_list) >= 3:
-            conversations_list.pop()
-        
-        data_dict = {
-            "model": "Qwen/Qwen3-8B",
-            "messages": conversations_list,
-            "temperature": 0
-        }
-        
-        # 将请求放入队列
-        request_queue.put(data_dict)
-
-# 发送结束信号
-request_queue.put(None)
-scheduler_thread.join()
-end_time = time.time()
-total_time = end_time - start_time
-
-print("等待所有请求处理完成...")
-while (success_count + failed_count) < sent_count:
-    time.sleep(0.1)
-    current_finished = success_count + failed_count
-    # print(f"进度: {current_finished}/{sent_count} ({current_finished/sent_count*100:.1f}%)")
-
-response_time = time.time() - start_time
-
-print(f"\n=== BF 控制统计 ===")
-print(f"目标BF: {BF}")
-print(f"实际QPS: {sent_count/total_time:.2f}")
-print(f"总发送数量: {sent_count}")
-print(f"成功响应数: {success_count}")
-print(f"失败响应数: {failed_count}")
-print(f"响应成功率: {success_count/(success_count+failed_count)*100:.2f}%")
-print(f"总耗时: {response_time:.2f}秒")
-# print(f"待处理请求: {request_queue.qsize()}")
+if __name__ == "__main__":
+    test_tokenization()

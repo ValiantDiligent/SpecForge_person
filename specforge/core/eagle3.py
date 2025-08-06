@@ -150,7 +150,7 @@ class OnlineEagle3Model(Eagle3Model):
 
         # basic info
         batch_size, seq_length, _ = hidden_states.shape
-        seq_length_with_past = seq_length
+        seq_length_with_past = seq_length   # 初始值等于当前序列长度
         past_key_values_length = 0
 
         # Step 2: project the concatenated hidden states to the target hidden size
@@ -204,7 +204,7 @@ class OnlineEagle3Model(Eagle3Model):
             hidden_states_out = self.draft_model.backbone(
                 input_embeds=inputs_embeds,
                 hidden_states=hidden_states,
-                cache_hidden=cache_hidden,
+                cache_hidden=cache_hidden, #有待明确
                 attention_mask=attention_mask,
                 position_ids=position_ids,
                 use_cache=True,

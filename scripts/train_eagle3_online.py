@@ -269,6 +269,7 @@ def main():
 
         for data in tqdm(train_dataloader, desc=f"Training Epoch {epoch}"):
             optimizer.zero_grad()
+            # forward
             plosses, _, acces = eagle3_model(
                 input_ids=data["input_ids"].cuda(),
                 attention_mask=data["attention_mask"].cuda(),

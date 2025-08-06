@@ -42,7 +42,7 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: metadata.uid
-        image: registry.corp.kuaishou.com/llm/sglang:v0.4.9.post2-cu126
+        image: registry.corp.kuaishou.com/ksp/public/private_clouds/llm-inference-vllm:1.0.51-master-c
         imagePullPolicy: Always
         name: main-container
         resources:
