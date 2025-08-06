@@ -10,11 +10,10 @@ torchrun \
     --standalone \
     --nproc_per_node $NUM_GPUS \
     $ROOT_DIR/scripts/train_eagle3_online.py \
-    --target-model-path Qwen/Qwen3-32B \
+    --target-model-path /media/qwen3_32b \
     --draft-model-config $ROOT_DIR/configs/qwen3-32b-eagle3.json \
-    # --train-data-path $ROOT_DIR/cache/dataset/sharegpt.jsonl \
-    --train-data-path /media/qwen3_32b \
-    --output-dir $ROOT_DIR/outputs/Qwen3-32B-eagle3 \
+    --train-data-path $ROOT_DIR/cache/dataset/train-eagle-wq-0802-qwen3-32b-100000.json \
+    --output-dir $ROOT_DIR/outputs/Qwen3-32B-eagle3_32b \
     --num-epochs 6 \
     --batch-size 1 \
     --learning-rate 1e-4 \
