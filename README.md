@@ -1,9 +1,11 @@
 <div align="center" id="sglangtop">
 <img src="./assets/logo.png" alt="logo" width="400" margin="10px"></img>
 
-[![HF-llama4-scout-eagle3](https://img.shields.io/badge/🤗%20Hugging%20Face-Llama4%20Scout-yellow.svg?style=flat)](https://huggingface.co/lmsys/sglang-EAGLE3-Llama-4-Scout-17B-16E-Instruct-v1)
-[![HF-llama4-maverick-eagle3](https://img.shields.io/badge/🤗%20Hugging%20Face-Llama4%20Maverick-yellow.svg?style=flat)](https://huggingface.co/lmsys/sglang-EAGLE3-Llama-4-Maverick-17B-128E-Instruct-v1)
+[![github badge](https://img.shields.io/badge/📃%20LMSYS-Blog-black.svg?style=flat)](https://lmsys.org/blog/2025-07-25-spec-forge/)
+[![slack badge](https://img.shields.io/badge/Slack-join-blueviolet?logo=slack&amp)](https://sgl-fru7574.slack.com/archives/C09784E3EN6)
+[![SGLang Eagle3](https://img.shields.io/badge/🤗%20Hugging%20Face-SGLang%20Eagle3-yellow.svg?style=flat)](https://huggingface.co/collections/lmsys/eagle-3-6886b2329f3998a8bc23f8ed)
 [![license](https://img.shields.io/badge/License-MIT%202.0-blue)](./LICENSE)
+
 </div>
 
 
@@ -55,7 +57,7 @@ We provide two orthogonal paths so everyone can start training in minutes, regar
 > **Why does disk matter?**
 > During Eagle3 training, the frozen target model will first generate the hidden states for each token given the data sample. The hidden states are fed to the draft model for training.
 > Offline mode stores these hidden states to the local disk, so a small disk can be filled up fast.
-> Online mode only generates these hidden states on the fly without storing them to the disk, but needs to keep the draft model alive during training, trading GPU RAM for almost-zero disk footprint.
+> Online mode only generates these hidden states on the fly without storing them to the disk, but needs to keep the target model resident in memory during training, trading GPU RAM for almost-zero disk footprint.
 
 ### ⚡️ SGLang-ready
 
@@ -145,7 +147,7 @@ cat dataset1.jsonl dataset2.jsonl > merged_dataset.jsonl
 
 ### 🏎️ Online Training
 
-We have provided a simple startup script to train the Eagle3 model for the Llama 3 and 4 models. You can run the following command to start the training.
+We have provided a simple startup script to train the Eagle3 model for the Llama 3 and 4, Qwen3 models. You can run the following command to start the training.
 
 ```bash
 # make sure you have sharegpt data prepared
@@ -154,6 +156,14 @@ bash ./examples/run_llama3_eagle3_online.sh
 
 # train llama4-scout
 bash ./examples/run_llama4_eagle3_online.sh
+
+# train Qwen3-30B-A3B
+# Qwen3-235B-A22B online training is also supported;
+# the relevant code is included in the script (currently commented out).
+bash ./examples/run_qwen3_moe_eagle3_online.sh
+
+# train Qwen3-8B
+bash ./examples/run_qwen3_dense_eagle3_online.sh
 ```
 
 ### 💨 Offline Training
