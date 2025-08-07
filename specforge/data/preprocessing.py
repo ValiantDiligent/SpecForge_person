@@ -97,12 +97,15 @@ def preprocess_conversations(
                 continue # skip system prompt
             expected_role = convroles[j % 2]
             j += 1
-            assert role == expected_role, (
-                f"Role validation failed at position {j}: "
-                f"expected '{expected_role}' but got '{role}'. "
-                f"Conversation should alternate between 'user' and 'assistant'. "
-                f"Full message content: {sentence}"
-            )
+            # log the warning , then skip the sentence and continue 
+            if sentence["role"] != expected_role:
+                warnings.warn(
+                    f"Role validation failed at position {j}: "
+                    f"expected '{expected_role}' but got '{sentence['role']}'. "
+                    f"Skipping this sentence. Full message content: {sentence}"
+                )
+                continue
+
             messages.append({"role": role, "content": sentence["content"]})
 
         messages.insert(0, {"role": "system", "content": system_prompt})
