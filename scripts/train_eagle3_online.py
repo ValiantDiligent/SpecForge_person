@@ -138,6 +138,7 @@ def main():
             torch_dtype=torch.bfloat16,
             device="cuda",
         ).eval()
+        print("Initialized target model, Using AutoDistributedTargetModel\n")
     else:
         target_model = (
             AutoModelForCausalLM.from_pretrained(
@@ -147,6 +148,7 @@ def main():
             .eval()
             .cuda()
         )
+        print("Initialized target model, Using AutoModelForCausalLM\n")
     print_with_rank(f"Initialized target model")
     # load model with resume
     draft_model_config = AutoDraftModelConfig.from_file(args.draft_model_config)

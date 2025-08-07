@@ -19,7 +19,7 @@ def get_dp_group():
     return _DP_GROUP
 
 
-def init_distributed(timeout: int = 10, tp_size: int = 1):
+def init_distributed(timeout: int = 15, tp_size: int = 1):
     """Initialize distributed training.
 
     Args:
