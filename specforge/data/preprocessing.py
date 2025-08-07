@@ -81,31 +81,32 @@ def preprocess_conversations(
             # if the source is None, skip it
             continue
         
-        if source[0]["role"] != "system":
-            # if the first message is not from system, get it from the template
-            system_prompt = chat_template.system_prompt
-        else:
-            system_prompt = source[0]["content"]
-        messages = [{"role": "system", "content": system_prompt}]
+        system_prompt = chat_template.system_prompt
+        messages = []
 
-
-        if source[0]["role"] != "user":
+        if source[0]["role"] == "assistant":
             # if the first message is not from user, skip it
             source = source[1:]
 
         convroles = ["user", "assistant"]
-        for j, sentence in enumerate(source):
+        j = 0
+        for _, sentence in enumerate(source):
             role = sentence["role"]
+            if role == "system":
+                system_prompt = source[0]["content"]
+                continue # skip system prompt
             expected_role = convroles[j % 2]
+            j += 1
             assert role == expected_role, (
                 f"Role validation failed at position {j}: "
                 f"expected '{expected_role}' but got '{role}'. "
                 f"Conversation should alternate between 'user' and 'assistant'. "
-                f"Current conversation roles so far: {[msg['role'] for msg in source[:j+1]]}. "
                 f"Full message content: {sentence}"
             )
             messages.append({"role": role, "content": sentence["content"]})
 
+        messages.insert(0, {"role": "system", "content": system_prompt})
+        
         conversation = tokenizer.apply_chat_template(
             messages,
             tokenize=False,
