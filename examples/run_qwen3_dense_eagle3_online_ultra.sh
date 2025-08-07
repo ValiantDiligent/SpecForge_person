@@ -14,8 +14,8 @@ torchrun \
     --draft-model-config $ROOT_DIR/configs/qwen3-32b-eagle3.json \
     --train-data-path $ROOT_DIR/cache/dataset/ultrachat.jsonl \
     --output-dir $ROOT_DIR/outputs/Qwen3-32B-eagle3_32b_ultra \
-    --num-epochs 6 \
-    --batch-size 4 \
+    --num-epochs 5 \
+    --batch-size 2 \
     --learning-rate 1e-4 \
     --max-length 2048 \
     --chat-template qwen3 \
