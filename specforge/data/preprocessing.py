@@ -83,7 +83,8 @@ def preprocess_conversations(
         
         system_prompt = chat_template.system_prompt
         messages = []
-
+        skip_current_source = False
+        
         if source[0]["role"] == "assistant":
             # if the first message is not from user, skip it
             source = source[1:]
@@ -104,10 +105,11 @@ def preprocess_conversations(
                     f"expected '{expected_role}' but got '{sentence['role']}'. "
                     f"Skipping this sentence. Full message content: {sentence}"
                 )
-                continue
-
+                skip_current_source = True
+                break
             messages.append({"role": role, "content": sentence["content"]})
-
+        if skip_current_source:
+            continue
         messages.insert(0, {"role": "system", "content": system_prompt})
         
         conversation = tokenizer.apply_chat_template(
