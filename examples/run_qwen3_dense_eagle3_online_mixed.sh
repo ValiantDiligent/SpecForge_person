@@ -20,7 +20,5 @@ torchrun \
     --max-length 2048 \
     --chat-template qwen3 \
     --cache-dir $ROOT_DIR/cache_qwen3_32B_mixed_private \
-
-    --embedding-key model.embed_tokens.weight \
     --tp-size $NUM_GPUS \
     --ttt-length 7
