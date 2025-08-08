@@ -13,13 +13,14 @@ torchrun \
     --target-model-path /media/qwen3_32b \
     --draft-model-config $ROOT_DIR/configs/qwen3-32b-eagle3.json \
     --train-data-path $ROOT_DIR/cache/dataset/train-mixed-private.json \
-    --output-dir $ROOT_DIR/outputs/Qwen3-32B-eagle3_32b \
+    --output-dir $ROOT_DIR/outputs/Qwen3-32B-eagle3_32b_mixed \
     --num-epochs 5 \
     --batch-size 4 \
     --learning-rate 1e-4 \
     --max-length 2048 \
     --chat-template qwen3 \
-    --cache-dir $ROOT_DIR/cache_qwen3_32B \
+    --cache-dir $ROOT_DIR/cache_qwen3_32B_mixed_private \
+
     --embedding-key model.embed_tokens.weight \
     --tp-size $NUM_GPUS \
     --ttt-length 7
