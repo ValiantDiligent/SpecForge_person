@@ -15,7 +15,7 @@ torchrun \
     --train-data-path $ROOT_DIR/cache/dataset/train-mixed-private.json \
     --output-dir $ROOT_DIR/outputs/Qwen3-32B-eagle3_32b_mixed \
     --num-epochs 5 \
-    --batch-size 6 \
+    --batch-size 4 \
     --learning-rate 1e-4 \
     --max-length 2048 \
     --chat-template qwen3 \
