@@ -148,6 +148,7 @@ def main():
             )
         load_training_state = not args.weights_only
         draft_model_last_checkpoint = get_last_checkpoint(args.load_from_checkpoint)
+        print_on_rank0(f"Previous checkpoint detected: {draft_model_last_checkpoint}")
     elif args.resume and os.path.isdir(args.output_dir):
         print_on_rank0(args.output_dir)
         draft_model_last_checkpoint = get_last_checkpoint(args.output_dir)
@@ -196,8 +197,10 @@ def main():
 
     # convert to dataloader
     if args.vm_cache_key:
+        print_on_rank0(f"VM Cache detected: {args.vm_cache_key}")
         cache_key = args.vm_cache_key
     else:
+        print_on_rank0(f"VM Cache NOT detected: {args.vm_cache_key}")
         cache_key = hashlib.md5(args.train_data_path.encode()).hexdigest()
     train_dataset = load_dataset("json", data_files=args.train_data_path)["train"]
     with rank_0_priority():

@@ -22,6 +22,7 @@ torchrun \
     --cache-dir $ROOT_DIR/cache_qwen3_32B_mixed_private_increment \
     --load-from-checkpoint $ROOT_DIR/outputs/Qwen3-32B-eagle3_32b_ultra \
     --weights-only \
+    --resume \
     --tp-size $NUM_GPUS \
     --vm-cache-key d33b394de1d2566a72e2bf42d1c6f341 \
     --ttt-length 7
