@@ -83,6 +83,20 @@ def parse_args():
 
     # resume
     parser.add_argument("--resume", action="store_true")
+    parser.add_argument(
+        "--vm-cache-key", type=str, default=None, help="vocabulary mapping file name"
+    )
+    parser.add_argument(
+        "--load-from-checkpoint",
+        type=str,
+        default=None,
+        help="Load model weights from specific checkpoint directory",
+    )
+    parser.add_argument(
+        "--weights-only",
+        action="store_true",
+        help="Only load model weights, reset optimizer and scheduler (for incremental training)",
+    )
 
     # wandb wandb args
     parser.add_argument("--wandb", action="store_true")
@@ -125,7 +139,16 @@ def main():
 
     # detecting last ckpt for draft model
     draft_model_last_checkpoint = None
-    if args.resume and os.path.isdir(args.output_dir):
+
+    load_training_state = True
+    if args.resume and args.load_from_checkpoint:
+        if not os.path.exists(args.load_from_checkpoint):
+            raise ValueError(
+                f"Checkpoint directory does not exist: {args.load_from_checkpoint}"
+            )
+        load_training_state = not args.weights_only
+        draft_model_last_checkpoint = get_last_checkpoint(args.load_from_checkpoint)
+    elif args.resume and os.path.isdir(args.output_dir):
         print_on_rank0(args.output_dir)
         draft_model_last_checkpoint = get_last_checkpoint(args.output_dir)
         print_on_rank0(f"Last checkpoint detected: {draft_model_last_checkpoint}")
@@ -172,7 +195,10 @@ def main():
     tokenizer = AutoTokenizer.from_pretrained(args.target_model_path)
 
     # convert to dataloader
-    cache_key = hashlib.md5(args.train_data_path.encode()).hexdigest()
+    if args.vm_cache_key:
+        cache_key = args.vm_cache_key
+    else:
+        cache_key = hashlib.md5(args.train_data_path.encode()).hexdigest()
     train_dataset = load_dataset("json", data_files=args.train_data_path)["train"]
     with rank_0_priority():
         train_eagle3_dataset = build_eagle3_dataset(
@@ -252,7 +278,7 @@ def main():
 
     # resume
     start_epoch = 0
-    if draft_model_last_checkpoint is not None:
+    if draft_model_last_checkpoint is not None and load_training_state:
         print_on_rank0(
             f"Resuming draft model training from checkpoint: {draft_model_last_checkpoint}"
         )
@@ -273,6 +299,12 @@ def main():
             print_on_rank0(
                 f"Warning: Checkpoint directory {draft_model_last_checkpoint} found, but training_state.pt is missing. Starting from scratch."
             )
+    elif draft_model_last_checkpoint is not None:
+        # 只加载了权重，使用新的优化器
+        print_on_rank0(
+            "🔄 Incremental training mode: using fresh optimizer and scheduler"
+        )
+        start_epoch = 0
 
     dist.barrier()
 
@@ -392,7 +424,8 @@ def main():
                 draft_model_state_dict = {
                     k.replace("draft_model.", ""): v
                     for k, v in model_state_dict.items()
-                    if "draft_model." in k and "embed" not in k.lower() #remove embedding layer
+                    if "draft_model." in k
+                    and "embed" not in k.lower()  # remove embedding layer
                 }
 
                 if dist.get_rank() == 0:
